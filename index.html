@@ -686,6 +686,8 @@
   const DEFAULT_SUPABASE_KEY = "sb_publishable_-28o0MUWHqwTz_3JR7wC8A_0VtUeZE-";
   const SETTINGS_PASSWORD = "20241816Zr";
   const TABLE = "games";
+  const META_TABLE = "game_meta_cache"; // RAWG/Steam'den çekilen kapak+gereksinim verisinin paylaşımlı önbelleği
+  const META_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 gün
 
   function loadSettings(){
     let saved = {};
@@ -761,16 +763,39 @@
   const playOpenSound  = () => beep({freq:220, duration:0.16, gain:0.05, type:"sine", glideTo:480});
   const playCloseSound = () => beep({freq:420, duration:0.10, gain:0.04, type:"sine", glideTo:180});
 
-  // ---------- RAWG'dan oyun kapağı + sistem gereksinimi çekme ----------
-  function cacheKeyFor(name){ return "gmeta:" + name.trim().toLowerCase(); }
-
+  // ---------- Oyun kapağı + sistem gereksinimi çekme (Supabase'de paylaşımlı önbellek) ----------
+  // ÖNEMLİ: Eskiden bu veri sadece tarayıcının localStorage'ına yazılıyordu; bu hem
+  // cihazlar/tarayıcılar arasında paylaşılmıyordu hem de bir oyun için RAWG/Steam isteği
+  // bir kere (CORS/ağ hatası yüzünden bile olsa) başarısız olduğunda sonuç sonsuza kadar
+  // "bulunamadı" olarak önbellekte kalıp bir daha asla yeniden denenmiyordu — resimlerin
+  // hiç gözükmemesinin ana sebebi büyük ihtimalle buydu. Artık:
+  //  1) Sonuçlar game_meta_cache tablosunda (Supabase) saklanıyor, tüm kullanıcılar paylaşıyor.
+  //  2) Sadece ANLAMLI sonuçlar (görsel/gereksinim bulunmuş ya da API'nin kendisi "yok" dediği
+  //     sonuçlar) önbelleğe yazılıyor; ağ/CORS hatası olan denemeler önbelleğe hiç yazılmıyor,
+  //     böylece bir sonraki sayfa açılışında otomatik olarak yeniden denenir.
+  //  3) "Bulunamadı" kayıtları da 14 gün sonra süresi dolmuş sayılıp yeniden denenir.
   async function fetchGameMeta(name){
     const key = name.trim().toLowerCase();
     if(metaCache[key]) return metaCache[key];
 
-    const stored = localStorage.getItem(cacheKeyFor(name));
-    if(stored){
-      try{ const parsed = JSON.parse(stored); metaCache[key] = parsed; return parsed; }catch(e){}
+    try{
+      const { data: cached, error: cacheErr } = await sb
+        .from(META_TABLE)
+        .select("image, req_min, req_rec, storage, not_found, updated_at")
+        .eq("isim_key", key)
+        .maybeSingle();
+      if(!cacheErr && cached){
+        const age = Date.now() - new Date(cached.updated_at).getTime();
+        const hasRealData = cached.image || cached.req_min || cached.req_rec;
+        const notFoundStillFresh = cached.not_found && age < META_CACHE_TTL_MS;
+        if(hasRealData || notFoundStillFresh){
+          const meta = { image: cached.image, reqMin: cached.req_min, reqRec: cached.req_rec, storage: cached.storage, notFound: !!cached.not_found };
+          metaCache[key] = meta;
+          return meta;
+        }
+      }
+    }catch(e){
+      console.warn("Önbellek (Supabase) okunamadı, doğrudan API'ye düşülüyor:", e);
     }
 
     let meta = null;
@@ -785,7 +810,25 @@
     }
 
     metaCache[key] = meta;
-    try{ localStorage.setItem(cacheKeyFor(name), JSON.stringify(meta)); }catch(e){}
+
+    // Ağ/CORS hatası varsa önbelleğe YAZMA — bir sonraki denemede tekrar denesin.
+    if(!meta.error){
+      try{
+        await sb.from(META_TABLE).upsert({
+          isim_key: key,
+          isim: name,
+          image: meta.image || null,
+          req_min: meta.reqMin || null,
+          req_rec: meta.reqRec || null,
+          storage: meta.storage || null,
+          not_found: !!meta.notFound,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "isim_key" });
+      }catch(e){
+        console.warn("Önbellek (Supabase) yazılamadı:", e);
+      }
+    }
+
     return meta;
   }
 
@@ -793,21 +836,35 @@
   async function fetchFromRawg(name){
     const key = name.trim().toLowerCase();
     try{
-      const searchRes = await fetch(`https://api.rawg.io/api/games?key=${RAWG_API_KEY}&search=${encodeURIComponent(name)}&page_size=5`);
+      const searchRes = await fetch(`https://api.rawg.io/api/games?key=${encodeURIComponent(RAWG_API_KEY)}&search=${encodeURIComponent(name)}&page_size=5`);
+      if(!searchRes.ok){
+        const bodyText = await searchRes.text().catch(()=> "");
+        console.error(`RAWG arama hatası (HTTP ${searchRes.status}) — "${name}":`, bodyText);
+        // 401/403 -> API anahtarı geçersiz; 429 -> aylık kota dolmuş. İkisi de hata sayılır, önbelleğe yazılmaz.
+        return { notFound:true, error:true };
+      }
       const searchData = await searchRes.json();
       const results = searchData.results || [];
       if(!results.length) return { notFound:true };
       const match = results.find(r => (r.name||"").toLowerCase() === key) || results[0];
 
-      const detailRes = await fetch(`https://api.rawg.io/api/games/${match.id}?key=${RAWG_API_KEY}`);
+      const detailRes = await fetch(`https://api.rawg.io/api/games/${match.id}?key=${encodeURIComponent(RAWG_API_KEY)}`);
+      if(!detailRes.ok){
+        const bodyText = await detailRes.text().catch(()=> "");
+        console.error(`RAWG detay hatası (HTTP ${detailRes.status}) — "${name}":`, bodyText);
+        // Arama sonucu vardı, en azından liste görselini kullanabiliriz.
+        return { image: match.background_image || null, notFound: !match.background_image, error: !match.background_image };
+      }
       const detail = await detailRes.json();
 
       const pcEntry = (detail.platforms || []).find(p => {
         const slug = (p.platform && (p.platform.slug || p.platform.name) || "").toLowerCase();
         return slug.includes("pc");
       });
-      const reqMin = pcEntry?.requirements_en?.minimum || null;
-      const reqRec = pcEntry?.requirements_en?.recommended || null;
+      // RAWG bazı yanıtlarda requirements_en, bazılarında sade requirements alanı döndürüyor — ikisini de dene.
+      const reqBlock = (pcEntry && (pcEntry.requirements_en || pcEntry.requirements)) || null;
+      const reqMin = reqBlock?.minimum || null;
+      const reqRec = reqBlock?.recommended || null;
       const storageSource = reqRec || reqMin || "";
       const storageMatch = storageSource.match(/storage[^\n:]*:?\s*([\d.,]+\s?(?:GB|MB))/i);
 
@@ -818,7 +875,7 @@
         notFound: !reqMin && !reqRec && !detail.background_image
       };
     }catch(err){
-      console.error("RAWG istek hatası:", err);
+      console.error(`RAWG istek hatası — "${name}" (muhtemelen ağ/CORS sorunu):`, err);
       return { notFound:true, error:true };
     }
   }
@@ -827,7 +884,28 @@
   // rawg.io'ya kayıt/giriş sorun çıkarırsa, kapak görseli ve sistem gereksinimleri
   // otomatik olarak Steam mağaza verisinden çekilir. Tarayıcıdan doğrudan erişim CORS'a
   // takılabildiği için istekler açık bir CORS proxy üzerinden yapılır.
-  const CORS_PROXY = "https://corsproxy.io/?url=";
+  // Tek bir ücretsiz CORS proxy'e güvenmek riskli (corsproxy.io sık sık kota/erişim sorunu
+  // yaşıyor ve bu da resimlerin sessizce yüklenmemesine yol açabiliyor) — sırayla birkaç
+  // proxy deneniyor, ilk başarılı olan kullanılıyor.
+  const CORS_PROXIES = [
+    (url) => "https://corsproxy.io/?url=" + encodeURIComponent(url),
+    (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url)
+  ];
+
+  async function fetchJsonViaCorsProxy(targetUrl){
+    let lastErr = new Error("Hiçbir CORS proxy denenemedi");
+    for(const buildProxyUrl of CORS_PROXIES){
+      try{
+        const res = await fetch(buildProxyUrl(targetUrl));
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      }catch(err){
+        lastErr = err;
+        console.warn("CORS proxy denemesi başarısız, sıradaki deneniyor:", err);
+      }
+    }
+    throw lastErr;
+  }
 
   function stripHtml(html){
     if(!html) return null;
@@ -839,8 +917,7 @@
   async function fetchFromSteam(name){
     try{
       const searchUrl = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(name)}&l=english&cc=us`;
-      const searchRes = await fetch(CORS_PROXY + encodeURIComponent(searchUrl));
-      const searchData = await searchRes.json();
+      const searchData = await fetchJsonViaCorsProxy(searchUrl);
       const items = searchData.items || [];
       if(!items.length) return { notFound:true };
 
@@ -848,8 +925,7 @@
       const match = items.find(i => (i.name||"").toLowerCase() === key) || items[0];
 
       const detailUrl = `https://store.steampowered.com/api/appdetails?appids=${match.id}&l=english`;
-      const detailRes = await fetch(CORS_PROXY + encodeURIComponent(detailUrl));
-      const detailData = await detailRes.json();
+      const detailData = await fetchJsonViaCorsProxy(detailUrl);
       const entry = detailData[match.id];
       const d = entry && entry.success ? entry.data : null;
       if(!d) return { image: match.tiny_image || null, notFound:true };
