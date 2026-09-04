@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oyun Kütüphanem</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg-1:#EEEAE3;
+    --bg-2:#F7F4EE;
+    --surface:rgba(255,255,255,0.72);
+    --surface-solid:#FFFFFF;
+    --border:rgba(30,25,20,0.08);
+    --text:#2C2822;
+    --text-muted:#7A7469;
+    --accent:#C9694A;
+    --accent-hover:#B85A3D;
+    --accent-soft:rgba(201,105,74,0.12);
+    --radius-lg:16px;
+    --radius-md:10px;
+    --radius-sm:8px;
+    --shadow-1:0 1px 2px rgba(20,15,10,0.04), 0 8px 24px rgba(20,15,10,0.06);
+    --shadow-2:0 4px 12px rgba(20,15,10,0.10), 0 20px 48px rgba(20,15,10,0.14);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Segoe UI Variable","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(201,105,74,0.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(120,140,160,0.10), transparent 60%),
+      linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    min-height:100vh;
+  }
+
+  /* ---------- Top bar ---------- */
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:18px 28px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(247,244,238,0.78);
+    backdrop-filter:blur(20px) saturate(140%);
+    -webkit-backdrop-filter:blur(20px) saturate(140%);
+    border-bottom:1px solid var(--border);
+  }
+  .titlebar h1{
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:0.1px;
+    white-space:nowrap;
+  }
+  .search-wrap{
+    flex:1;
+    max-width:440px;
+    margin-left:8px;
+    position:relative;
+  }
+  .search-wrap svg{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    opacity:0.55;
+    pointer-events:none;
+  }
+  #searchInput{
+    width:100%;
+    padding:10px 14px 10px 40px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-solid);
+    font-size:14px;
+    color:var(--text);
+    outline:none;
+    transition:box-shadow .15s ease, border-color .15s ease;
+  }
+  #searchInput:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .spacer{flex:1;}
+  .icon-btn{
+    width:38px;height:38px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-solid);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    color:var(--text);
+    transition:background .15s ease, transform .1s ease;
+    flex-shrink:0;
+  }
+  .icon-btn:hover{background:#fff; box-shadow:var(--shadow-1);}
+  .icon-btn:active{transform:scale(0.94);}
+
+  /* ---------- Grid ---------- */
+  main{
+    padding:32px 28px 80px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(168px,1fr));
+    gap:20px;
+  }
+  .card{
+    background:var(--surface);
+    backdrop-filter:blur(6px);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:20px 16px 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    aspect-ratio:1/1;
+    justify-content:center;
+    gap:10px;
+    box-shadow:var(--shadow-1);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    box-shadow:var(--shadow-2);
+  }
+  .avatar{
+    width:56px;height:56px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    font-weight:600;
+    color:#fff;
+    flex-shrink:0;
+  }
+  .game-name{
+    font-size:13.5px;
+    font-weight:600;
+    line-height:1.25;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    max-width:100%;
+  }
+  .dl-btn{
+    margin-top:auto;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .dl-btn:hover{background:var(--accent-hover);}
+  .dl-btn:active{transform:scale(0.96);}
+
+  .empty-state{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    color:var(--text-muted);
+  }
+  .empty-state h3{color:var(--text); font-size:16px; margin:0 0 6px;}
+  .empty-state p{margin:0; font-size:13.5px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(20,17,14,0.35);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+  }
+  .overlay.show{display:flex;}
+  .dialog{
+    width:360px;
+    max-width:90vw;
+    background:var(--surface-solid);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-2);
+    border:1px solid var(--border);
+    overflow:hidden;
+    animation:pop .16s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:scale(0.96) translateY(4px);} to{opacity:1; transform:scale(1) translateY(0);}}
+  .dialog-header{
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;
+  }
+  .dialog-header .gear{
+    width:28px;height:28px;border-radius:8px;
+    background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--accent);
+  }
+  .dialog-header h2{font-size:14.5px;margin:0;font-weight:600;}
+  .dialog-body{padding:20px;}
+  .dialog-body p.hint{font-size:12.5px;color:var(--text-muted);margin:0 0 14px;}
+  .field-label{font-size:12.5px;font-weight:600;color:var(--text-muted);margin-bottom:6px;display:block;}
+  input[type="password"]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--border);
+    font-size:14px;
+    outline:none;
+    background:#fff;
+  }
+  input[type="password"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  .file-drop{
+    border:1.5px dashed var(--border);
+    border-radius:var(--radius-md);
+    padding:22px 14px;
+    text-align:center;
+    cursor:pointer;
+    color:var(--text-muted);
+    font-size:13px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .file-drop:hover{border-color:var(--accent); background:var(--accent-soft);}
+  .file-drop input{display:none;}
+  .file-drop.has-file{border-color:var(--accent); color:var(--text); background:var(--accent-soft);}
+  .error-msg{
+    color:#C0392B;
+    font-size:12.5px;
+    margin-top:8px;
+    display:none;
+  }
+  .error-msg.show{display:block;}
+  .status-msg{
+    color:#2E7D46;
+    font-size:12.5px;
+    margin-top:10px;
+    display:none;
+  }
+  .status-msg.show{display:block;}
+  .dialog-footer{
+    padding:14px 20px;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .btn{
+    padding:8px 16px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--text);
+    transition:background .15s ease, transform .1s ease;
+  }
+  .btn:active{transform:scale(0.96);}
+  .btn-primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .btn-primary:hover{background:var(--accent-hover);}
+  .btn-primary:disabled{opacity:0.5; cursor:default;}
+  .btn:not(.btn-primary):hover{background:#f4f2ee;}
+
+  .spinner{
+    width:14px;height:14px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,0.5);
+    border-top-color:#fff;
+    animation:spin .7s linear infinite;
+    display:inline-block;
+    vertical-align:middle;
+    margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15); border-radius:10px;}
+</style>
+</head>
+<body>
+
+  <div class="titlebar">
+    <h1>Oyun Kütüphanem</h1>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" type="text" placeholder="Oyun ara...">
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="settingsBtn" title="Ayarlar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.63.24 1.16.7 1.51 1.28"/></svg>
+    </button>
+  </div>
+
+  <main>
+    <div class="grid" id="grid">
+      <div class="empty-state">
+        <h3>Yükleniyor...</h3>
+        <p>Oyunlar getiriliyor.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Şifre modalı -->
+  <div class="overlay" id="pwOverlay">
+    <div class="dialog">
+      <div class="dialog-header">
+        <div class="gear">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h2>Ayarlara erişim</h2>
+      </div>
+      <div class="dialog-body">
+        <p class="hint">Devam etmek için şifreyi girin.</p>
+        <label class="field-label" for="pwInput">Şifre</label>
+        <input type="password" id="pwInput" placeholder="••••••••">
+        <div class="error-msg" id="pwError">Şifre yanlış. Tekrar deneyin.</div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn" id="pwCancel">İptal</button>
+        <button class="btn btn-primary" id="pwSubmit">Devam et</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Excel yükleme modalı -->
+  <div class="overlay" id="uploadOverlay">
+    <div class="dialog">
+      <div class="dialog-header">
+        <div class="gear">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <h2>Oyun listesini güncelle</h2>
+      </div>
+      <div class="dialog-body">
+        <p class="hint">"İsim" ve "Link" sütunlarını içeren bir Excel dosyası (.xlsx) yükleyin. Yüklenen liste, mevcut listenin yerini alır.</p>
+        <label class="file-drop" id="fileDrop">
+          <input type="file" id="fileInput" accept=".xlsx,.xls">
+          <span id="fileDropText">Dosya seçmek için tıklayın</span>
+        </label>
+        <div class="error-msg" id="uploadError"></div>
+        <div class="status-msg" id="uploadStatus"></div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn" id="uploadCancel">Kapat</button>
+        <button class="btn btn-primary" id="uploadSubmit" disabled>Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- Supabase ----------
+  const SUPABASE_URL = "https://nbimcsbehkeapohytoih.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_-28o0MUWHqwTz_3JR7wC8A_0VtUeZE-";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const TABLE = "games";
+  const SETTINGS_PASSWORD = "20241816Zr";
+
+  const AVATAR_COLORS = ["#C9694A","#5B7C99","#7C9473","#B08968","#8B6BA8","#C9A15A","#5E8B7E","#A85C6B"];
+  function colorForName(name){
+    let sum = 0;
+    for(const ch of name) sum += ch.charCodeAt(0);
+    return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+  }
+
+  let allGames = [];
+
+  async function loadGames(){
+    const grid = document.getElementById("grid");
+    const { data, error } = await sb.from(TABLE).select("isim, link").order("isim", { ascending: true });
+    if(error){
+      grid.innerHTML = `<div class="empty-state"><h3>Bağlantı hatası</h3><p>Oyunlar yüklenemedi: ${escapeHtml(error.message)}</p></div>`;
+      return;
+    }
+    allGames = data || [];
+    renderGames(allGames);
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function renderGames(list){
+    const grid = document.getElementById("grid");
+    if(!list.length){
+      grid.innerHTML = `<div class="empty-state"><h3>Henüz oyun eklenmedi</h3><p>Sağ üstteki ayarlar simgesinden Excel dosyanızı yükleyin.</p></div>`;
+      return;
+    }
+    grid.innerHTML = list.map(g => {
+      const letter = (g.isim || "?").trim().charAt(0).toUpperCase();
+      const color = colorForName(g.isim || "");
+      return `
+        <div class="card">
+          <div class="avatar" style="background:${color}">${escapeHtml(letter)}</div>
+          <div class="game-name">${escapeHtml(g.isim)}</div>
+          <button class="dl-btn" data-link="${escapeHtml(g.link)}">İndir</button>
+        </div>`;
+    }).join("");
+
+    grid.querySelectorAll(".dl-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const link = btn.getAttribute("data-link");
+        if(link) window.open(link, "_blank");
+      });
+    });
+  }
+
+  // ---------- Arama ----------
+  document.getElementById("searchInput").addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const filtered = q ? allGames.filter(g => (g.isim||"").toLowerCase().includes(q)) : allGames;
+    renderGames(filtered);
+  });
+
+  // ---------- Şifre modalı ----------
+  const pwOverlay = document.getElementById("pwOverlay");
+  const pwInput = document.getElementById("pwInput");
+  const pwError = document.getElementById("pwError");
+
+  document.getElementById("settingsBtn").addEventListener("click", () => {
+    pwInput.value = "";
+    pwError.classList.remove("show");
+    pwOverlay.classList.add("show");
+    setTimeout(()=>pwInput.focus(), 50);
+  });
+  document.getElementById("pwCancel").addEventListener("click", () => pwOverlay.classList.remove("show"));
+  pwOverlay.addEventListener("click", (e) => { if(e.target === pwOverlay) pwOverlay.classList.remove("show"); });
+
+  function checkPassword(){
+    if(pwInput.value === SETTINGS_PASSWORD){
+      pwOverlay.classList.remove("show");
+      openUploadModal();
+    } else {
+      pwError.classList.add("show");
+    }
+  }
+  document.getElementById("pwSubmit").addEventListener("click", checkPassword);
+  pwInput.addEventListener("keydown", (e) => { if(e.key === "Enter") checkPassword(); });
+
+  // ---------- Excel yükleme modalı ----------
+  const uploadOverlay = document.getElementById("uploadOverlay");
+  const fileInput = document.getElementById("fileInput");
+  const fileDropText = document.getElementById("fileDropText");
+  const fileDrop = document.getElementById("fileDrop");
+  const uploadSubmit = document.getElementById("uploadSubmit");
+  const uploadError = document.getElementById("uploadError");
+  const uploadStatus = document.getElementById("uploadStatus");
+
+  let parsedRows = null;
+
+  function openUploadModal(){
+    fileInput.value = "";
+    fileDropText.textContent = "Dosya seçmek için tıklayın";
+    fileDrop.classList.remove("has-file");
+    uploadError.classList.remove("show");
+    uploadStatus.classList.remove("show");
+    uploadSubmit.disabled = true;
+    parsedRows = null;
+    uploadOverlay.classList.add("show");
+  }
+  document.getElementById("uploadCancel").addEventListener("click", () => uploadOverlay.classList.remove("show"));
+  uploadOverlay.addEventListener("click", (e) => { if(e.target === uploadOverlay) uploadOverlay.classList.remove("show"); });
+
+  fileInput.addEventListener("change", () => {
+    uploadError.classList.remove("show");
+    uploadStatus.classList.remove("show");
+    const file = fileInput.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        const cleaned = rows.map(r => {
+          const isim = (r["İsim"] ?? r["Isim"] ?? r["isim"] ?? "").toString().trim();
+          const link = (r["Link"] ?? r["link"] ?? "").toString().trim();
+          return { isim, link };
+        }).filter(r => r.isim && r.link);
+
+        if(!cleaned.length){
+          uploadError.textContent = "Dosyada geçerli \"İsim\" ve \"Link\" sütunları bulunamadı.";
+          uploadError.classList.add("show");
+          uploadSubmit.disabled = true;
+          fileDrop.classList.remove("has-file");
+          return;
+        }
+
+        parsedRows = cleaned;
+        fileDropText.textContent = `${file.name} — ${cleaned.length} oyun bulundu`;
+        fileDrop.classList.add("has-file");
+        uploadSubmit.disabled = false;
+      }catch(err){
+        uploadError.textContent = "Dosya okunamadı. Geçerli bir .xlsx dosyası seçtiğinizden emin olun.";
+        uploadError.classList.add("show");
+        uploadSubmit.disabled = true;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  uploadSubmit.addEventListener("click", async () => {
+    if(!parsedRows || !parsedRows.length) return;
+    uploadError.classList.remove("show");
+    uploadStatus.classList.remove("show");
+    uploadSubmit.disabled = true;
+    uploadSubmit.innerHTML = '<span class="spinner"></span>Kaydediliyor...';
+
+    try{
+      const { error: delError } = await sb.from(TABLE).delete().neq("isim", "__none__");
+      if(delError) throw delError;
+
+      const { error: insError } = await sb.from(TABLE).insert(parsedRows);
+      if(insError) throw insError;
+
+      uploadStatus.textContent = `${parsedRows.length} oyun kaydedildi.`;
+      uploadStatus.classList.add("show");
+      await loadGames();
+      setTimeout(() => uploadOverlay.classList.remove("show"), 900);
+    }catch(err){
+      uploadError.textContent = "Kaydetme hatası: " + (err.message || "bilinmeyen hata");
+      uploadError.classList.add("show");
+    }finally{
+      uploadSubmit.disabled = false;
+      uploadSubmit.textContent = "Kaydet";
+    }
+  });
+
+  // ---------- Başlangıç ----------
+  loadGames();
+</script>
+</body>
+</html>
