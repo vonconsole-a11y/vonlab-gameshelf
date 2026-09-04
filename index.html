@@ -8,33 +8,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg-1:#EEEAE3;
-    --bg-2:#F7F4EE;
-    --surface:rgba(255,255,255,0.72);
-    --surface-solid:#FFFFFF;
-    --border:rgba(30,25,20,0.08);
-    --text:#2C2822;
-    --text-muted:#7A7469;
-    --accent:#C9694A;
-    --accent-hover:#B85A3D;
-    --accent-soft:rgba(201,105,74,0.12);
+    --bg-0:#05070d;
+    --bg-1:#0b0e17;
+    --bg-2:#11151f;
+    --surface:#161b26;
+    --surface-2:#1c2230;
+    --border:rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.14);
+    --text:#EDEFF4;
+    --text-muted:#8991a3;
+    --text-dim:#5b6272;
+    --accent:#2E8CFF;
+    --accent-hover:#5BA4FF;
+    --accent-soft:rgba(46,140,255,0.14);
+    --accent-glow:rgba(46,140,255,0.35);
+    --good:#3ECF8E;
+    --bad:#FF5C5C;
     --radius-lg:16px;
     --radius-md:10px;
     --radius-sm:8px;
-    --shadow-1:0 1px 2px rgba(20,15,10,0.04), 0 8px 24px rgba(20,15,10,0.06);
-    --shadow-2:0 4px 12px rgba(20,15,10,0.10), 0 20px 48px rgba(20,15,10,0.14);
+    --shadow-1:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    --shadow-2:0 8px 24px rgba(0,0,0,0.45), 0 24px 64px rgba(0,0,0,0.5);
+    --shadow-glow:0 0 0 1px rgba(46,140,255,0.4), 0 12px 32px rgba(46,140,255,0.25);
   }
 
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
     margin:0;
-    font-family:"Segoe UI Variable","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-family:"Segoe UI Variable","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
     color:var(--text);
     background:
-      radial-gradient(1200px 600px at 85% -10%, rgba(201,105,74,0.10), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, rgba(120,140,160,0.10), transparent 60%),
-      linear-gradient(180deg, var(--bg-2), var(--bg-1));
+      radial-gradient(1000px 600px at 90% -10%, rgba(46,140,255,0.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(46,140,255,0.06), transparent 60%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-0));
     min-height:100vh;
   }
 
@@ -43,18 +50,26 @@
     display:flex;
     align-items:center;
     gap:16px;
-    padding:18px 28px;
+    padding:16px 16px;
     position:sticky;
     top:0;
     z-index:20;
-    background:rgba(247,244,238,0.78);
+    background:rgba(8,10,16,0.82);
     backdrop-filter:blur(20px) saturate(140%);
     -webkit-backdrop-filter:blur(20px) saturate(140%);
     border-bottom:1px solid var(--border);
   }
+  .brand{display:flex; align-items:center; gap:10px; white-space:nowrap;}
+  .brand-mark{
+    width:32px;height:32px;border-radius:9px;
+    background:linear-gradient(135deg, var(--accent), #1a5fc9);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800; font-size:15px; color:#fff;
+    box-shadow:0 4px 14px rgba(46,140,255,0.35);
+  }
   .titlebar h1{
-    font-size:17px;
-    font-weight:600;
+    font-size:16.5px;
+    font-weight:700;
     margin:0;
     letter-spacing:0.1px;
     white-space:nowrap;
@@ -70,7 +85,7 @@
     left:14px;
     top:50%;
     transform:translateY(-50%);
-    opacity:0.55;
+    opacity:0.5;
     pointer-events:none;
   }
   #searchInput{
@@ -78,12 +93,13 @@
     padding:10px 14px 10px 40px;
     border-radius:999px;
     border:1px solid var(--border);
-    background:var(--surface-solid);
+    background:var(--surface);
     font-size:14px;
     color:var(--text);
     outline:none;
     transition:box-shadow .15s ease, border-color .15s ease;
   }
+  #searchInput::placeholder{color:var(--text-dim);}
   #searchInput:focus{
     border-color:var(--accent);
     box-shadow:0 0 0 3px var(--accent-soft);
@@ -93,81 +109,182 @@
     width:38px;height:38px;
     border-radius:999px;
     border:1px solid var(--border);
-    background:var(--surface-solid);
+    background:var(--surface);
     display:flex;align-items:center;justify-content:center;
     cursor:pointer;
     color:var(--text);
-    transition:background .15s ease, transform .1s ease;
+    transition:background .15s ease, transform .1s ease, border-color .15s ease;
     flex-shrink:0;
   }
-  .icon-btn:hover{background:#fff; box-shadow:var(--shadow-1);}
+  .icon-btn:hover{background:var(--surface-2); border-color:var(--border-strong);}
   .icon-btn:active{transform:scale(0.94);}
+
+  .apikey-banner{
+    max-width:1180px; margin:18px auto 0; padding:12px 16px;
+    background:var(--accent-soft); border:1px solid rgba(46,140,255,0.3);
+    border-radius:var(--radius-md); font-size:13px; color:var(--text);
+    display:flex; align-items:center; gap:10px; justify-content:space-between;
+  }
+  .apikey-banner a{color:var(--accent-hover); font-weight:600; text-decoration:none;}
+  .apikey-banner a:hover{text-decoration:underline;}
+  .apikey-banner button{
+    border:none; background:transparent; color:var(--text-dim); cursor:pointer; font-size:16px; line-height:1;
+    padding:2px 6px;
+  }
 
   /* ---------- Grid ---------- */
   main{
-    padding:32px 28px 80px;
-    max-width:1180px;
+    padding:24px 12px 80px;
+    max-width:100%;
     margin:0 auto;
   }
   .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(168px,1fr));
-    gap:20px;
+    grid-template-columns:repeat(auto-fill, minmax(178px,1fr));
+    gap:14px;
+  }
+
+  /* ---------- Popüler / Öne çıkanlar şeridi (Play Store tarzı) ---------- */
+  .popular-section{
+    margin:0 0 30px;
+  }
+  .popular-section h2{
+    font-size:16px;
+    font-weight:800;
+    margin:0 0 14px;
+    padding:0 2px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .popular-section h2 .rank-badge{
+    background:linear-gradient(135deg, var(--accent), #1a5fc9);
+    color:#fff; font-size:11px; font-weight:800;
+    padding:3px 9px; border-radius:999px;
+    letter-spacing:0.3px;
+  }
+  .popular-row{
+    display:flex;
+    gap:14px;
+    overflow-x:auto;
+    padding:2px 2px 10px;
+    scroll-snap-type:x proximity;
+  }
+  .popular-row::-webkit-scrollbar{height:8px;}
+  .popular-card{
+    position:relative;
+    flex:0 0 auto;
+    width:150px;
+    scroll-snap-align:start;
+    cursor:pointer;
+  }
+  .popular-card .cover-img{
+    position:relative;
+    inset:auto;
+    width:150px; height:200px;
+    border-radius:var(--radius-md);
+    background-size:cover; background-position:center;
+    background-color:var(--surface-2);
+    border:1px solid var(--border);
+    box-shadow:var(--shadow-1);
+    transition:transform .18s ease;
+  }
+  .popular-card:hover .cover-img{transform:translateY(-4px);}
+  .popular-card .cover-fallback{
+    position:absolute; inset:0; border-radius:var(--radius-md);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:#fff; text-align:center; padding:10px;
+  }
+  .popular-card .rank-num{
+    position:absolute; top:6px; left:6px;
+    width:24px; height:24px; border-radius:999px;
+    background:rgba(2,3,6,0.7); color:#fff;
+    font-size:12px; font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,0.2);
+  }
+  .popular-card .game-name{
+    margin-top:8px;
+    font-size:12.5px; font-weight:600; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .card{
+    position:relative;
     background:var(--surface);
-    backdrop-filter:blur(6px);
     border:1px solid var(--border);
     border-radius:var(--radius-lg);
-    padding:20px 16px 16px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    text-align:center;
-    aspect-ratio:1/1;
-    justify-content:center;
-    gap:10px;
+    aspect-ratio:2/3;
+    overflow:hidden;
+    cursor:pointer;
     box-shadow:var(--shadow-1);
-    transition:transform .15s ease, box-shadow .15s ease;
+    transition:transform .18s cubic-bezier(.2,.8,.3,1), box-shadow .18s ease, border-color .18s ease;
   }
   .card:hover{
-    transform:translateY(-3px);
-    box-shadow:var(--shadow-2);
+    transform:translateY(-6px) scale(1.025);
+    box-shadow:var(--shadow-glow);
+    border-color:rgba(46,140,255,0.5);
+    z-index:2;
   }
-  .avatar{
-    width:56px;height:56px;
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    font-size:20px;
-    font-weight:600;
-    color:#fff;
-    flex-shrink:0;
+  .cover-img{
+    position:absolute; inset:0;
+    background-size:cover;
+    background-position:center;
+    background-color:var(--surface-2);
+    transition:transform .5s ease, filter .2s ease;
+  }
+  .card:hover .cover-img{transform:scale(1.06);}
+  .cover-img.loaded{filter:none;}
+  .cover-fallback{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:600; color:#fff; text-align:center; padding:14px;
+  }
+  .card-shade{
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(5,7,13,0) 40%, rgba(5,7,13,0.55) 72%, rgba(5,7,13,0.92) 100%);
+  }
+  .card-info{
+    position:absolute; left:0; right:0; bottom:0;
+    padding:12px 12px 14px;
+    display:flex; flex-direction:column; gap:8px;
   }
   .game-name{
     font-size:13.5px;
-    font-weight:600;
+    font-weight:700;
     line-height:1.25;
+    color:#fff;
     overflow:hidden;
     text-overflow:ellipsis;
     display:-webkit-box;
     -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
-    max-width:100%;
+    text-shadow:0 1px 6px rgba(0,0,0,0.6);
   }
-  .dl-btn{
-    margin-top:auto;
+  .quick-dl{
+    align-self:flex-start;
     border:none;
     background:var(--accent);
     color:#fff;
-    font-size:12.5px;
-    font-weight:600;
-    padding:7px 18px;
+    font-size:11.5px;
+    font-weight:700;
+    padding:6px 14px;
     border-radius:999px;
     cursor:pointer;
     transition:background .15s ease, transform .1s ease;
+    display:flex; align-items:center; gap:5px;
   }
-  .dl-btn:hover{background:var(--accent-hover);}
-  .dl-btn:active{transform:scale(0.96);}
+  .quick-dl:hover{background:var(--accent-hover);}
+  .quick-dl:active{transform:scale(0.95);}
+  .play-badge{
+    position:absolute; top:10px; right:10px;
+    width:30px;height:30px;border-radius:999px;
+    background:rgba(5,7,13,0.55);
+    backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transform:translateY(-4px);
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .card:hover .play-badge{opacity:1; transform:translateY(0);}
 
   .empty-state{
     grid-column:1/-1;
@@ -178,11 +295,11 @@
   .empty-state h3{color:var(--text); font-size:16px; margin:0 0 6px;}
   .empty-state p{margin:0; font-size:13.5px;}
 
-  /* ---------- Modal ---------- */
+  /* ---------- Generic overlay/modal ---------- */
   .overlay{
     position:fixed; inset:0;
-    background:rgba(20,17,14,0.35);
-    backdrop-filter:blur(4px);
+    background:rgba(2,3,6,0.6);
+    backdrop-filter:blur(6px);
     display:none;
     align-items:center;
     justify-content:center;
@@ -190,12 +307,12 @@
   }
   .overlay.show{display:flex;}
   .dialog{
-    width:360px;
+    width:380px;
     max-width:90vw;
-    background:var(--surface-solid);
+    background:var(--surface);
     border-radius:var(--radius-lg);
     box-shadow:var(--shadow-2);
-    border:1px solid var(--border);
+    border:1px solid var(--border-strong);
     overflow:hidden;
     animation:pop .16s ease;
   }
@@ -209,9 +326,32 @@
     width:28px;height:28px;border-radius:8px;
     background:var(--accent-soft);
     display:flex;align-items:center;justify-content:center;
-    color:var(--accent);
+    color:var(--accent-hover);
   }
-  .dialog-header h2{font-size:14.5px;margin:0;font-weight:600;}
+  .dialog-header h2{font-size:14.5px;margin:0;font-weight:700;}
+  .settings-tabs{
+    display:flex; gap:4px; padding:12px 20px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .settings-tab{
+    border:none; background:transparent; color:var(--text-muted);
+    font-size:12.5px; font-weight:700; cursor:pointer;
+    padding:8px 4px 12px; margin-right:16px;
+    border-bottom:2px solid transparent;
+  }
+  .settings-tab.active{color:var(--text); border-bottom-color:var(--accent);}
+  .settings-tab:hover{color:var(--text);}
+  input[type="text"]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--border);
+    font-size:13.5px;
+    outline:none;
+    background:var(--bg-2);
+    color:var(--text);
+  }
+  input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
   .dialog-body{padding:20px;}
   .dialog-body p.hint{font-size:12.5px;color:var(--text-muted);margin:0 0 14px;}
   .field-label{font-size:12.5px;font-weight:600;color:var(--text-muted);margin-bottom:6px;display:block;}
@@ -222,11 +362,12 @@
     border:1px solid var(--border);
     font-size:14px;
     outline:none;
-    background:#fff;
+    background:var(--bg-2);
+    color:var(--text);
   }
   input[type="password"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
   .file-drop{
-    border:1.5px dashed var(--border);
+    border:1.5px dashed var(--border-strong);
     border-radius:var(--radius-md);
     padding:22px 14px;
     text-align:center;
@@ -234,19 +375,20 @@
     color:var(--text-muted);
     font-size:13px;
     transition:border-color .15s ease, background .15s ease;
+    display:block;
   }
   .file-drop:hover{border-color:var(--accent); background:var(--accent-soft);}
   .file-drop input{display:none;}
   .file-drop.has-file{border-color:var(--accent); color:var(--text); background:var(--accent-soft);}
   .error-msg{
-    color:#C0392B;
+    color:var(--bad);
     font-size:12.5px;
     margin-top:8px;
     display:none;
   }
   .error-msg.show{display:block;}
   .status-msg{
-    color:#2E7D46;
+    color:var(--good);
     font-size:12.5px;
     margin-top:10px;
     display:none;
@@ -265,8 +407,8 @@
     font-size:13px;
     font-weight:600;
     cursor:pointer;
-    border:1px solid var(--border);
-    background:#fff;
+    border:1px solid var(--border-strong);
+    background:var(--surface-2);
     color:var(--text);
     transition:background .15s ease, transform .1s ease;
   }
@@ -278,12 +420,12 @@
   }
   .btn-primary:hover{background:var(--accent-hover);}
   .btn-primary:disabled{opacity:0.5; cursor:default;}
-  .btn:not(.btn-primary):hover{background:#f4f2ee;}
+  .btn:not(.btn-primary):hover{background:#232a3a;}
 
   .spinner{
     width:14px;height:14px;
     border-radius:50%;
-    border:2px solid rgba(255,255,255,0.5);
+    border:2px solid rgba(255,255,255,0.35);
     border-top-color:#fff;
     animation:spin .7s linear infinite;
     display:inline-block;
@@ -292,14 +434,124 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
 
+  /* ---------- Oyun detay paneli ---------- */
+  .detail-overlay{
+    position:fixed; inset:0; z-index:200;
+    background:rgba(2,3,6,0.7);
+    backdrop-filter:blur(8px);
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    overflow-y:auto;
+    padding:40px 20px;
+  }
+  .detail-overlay.show{display:flex;}
+  .detail-panel{
+    width:100%; max-width:760px;
+    background:var(--bg-2);
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-2);
+    overflow:hidden;
+    animation:pop .18s ease;
+  }
+  .detail-close{
+    position:absolute; top:16px; right:16px;
+    width:36px;height:36px;border-radius:999px;
+    border:1px solid rgba(255,255,255,0.2);
+    background:rgba(2,3,6,0.55);
+    color:#fff; font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    z-index:2;
+  }
+  .detail-hero{
+    position:relative;
+    height:280px;
+    background-size:cover;
+    background-position:center;
+    background-color:var(--surface-2);
+    display:flex; align-items:flex-end;
+  }
+  .detail-hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(5,7,13,0.1) 0%, rgba(5,7,13,0.55) 60%, var(--bg-2) 100%);
+  }
+  .detail-hero-fallback{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px; font-weight:800; color:#fff;
+  }
+  .detail-hero-title{
+    position:relative; z-index:1;
+    padding:0 28px 20px;
+    font-size:26px; font-weight:800; color:#fff;
+    text-shadow:0 2px 10px rgba(0,0,0,0.5);
+  }
+  .detail-body{padding:24px 28px 28px;}
+  .detail-actions{display:flex; align-items:center; gap:12px; margin-bottom:22px;}
+  .detail-download{
+    border:none; background:var(--accent); color:#fff;
+    font-size:14px; font-weight:700; padding:11px 26px;
+    border-radius:999px; cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+    transition:background .15s ease, transform .1s ease;
+    box-shadow:0 8px 20px rgba(46,140,255,0.3);
+  }
+  .detail-download:hover{background:var(--accent-hover);}
+  .detail-download:active{transform:scale(0.97);}
+  .storage-badge{
+    display:none;
+    align-items:center; gap:7px;
+    background:var(--surface); border:1px solid var(--border-strong);
+    color:var(--text); font-size:13px; font-weight:700;
+    padding:9px 16px; border-radius:999px;
+  }
+  .detail-section h3{
+    font-size:14px; font-weight:700; margin:0 0 14px;
+    color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .detail-req-loading{color:var(--text-muted); font-size:13.5px; display:flex; align-items:center;}
+  .detail-req-grid{
+    display:none;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .req-col{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:16px;
+  }
+  .req-col h4{margin:0 0 8px; font-size:13px; color:var(--accent-hover); font-weight:700;}
+  .req-col pre{
+    margin:0; white-space:pre-wrap; word-break:break-word;
+    font-family:inherit; font-size:12.5px; line-height:1.55; color:var(--text-muted);
+  }
+  .detail-no-info{
+    font-size:13.5px; color:var(--text-muted);
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:14px 16px;
+  }
+  .detail-no-info a{color:var(--accent-hover); font-weight:600; text-decoration:none;}
+  .detail-no-info a:hover{text-decoration:underline;}
+
   ::-webkit-scrollbar{width:10px;}
-  ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15); border-radius:10px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12); border-radius:10px;}
+
+  @media (max-width:600px){
+    .detail-req-grid{grid-template-columns:1fr;}
+    .detail-hero{height:200px;}
+  }
 </style>
 </head>
 <body>
 
   <div class="titlebar">
-    <h1>Oyun Kütüphanem</h1>
+    <div class="brand">
+      <div class="brand-mark">OK</div>
+      <h1>Oyun Kütüphanem</h1>
+    </div>
     <div class="search-wrap">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="searchInput" type="text" placeholder="Oyun ara...">
@@ -310,7 +562,16 @@
     </button>
   </div>
 
+  <div class="apikey-banner" id="apikeyBanner" style="display:none;">
+    <span>RAWG API anahtarı girilmedi — kapak görselleri ve sistem gereksinimleri şu an <b>Steam</b> üzerinden çekiliyor. Daha iyi eşleşme için sağ üstteki ⚙ ayarlar simgesinden "API Ayarları" sekmesine bir RAWG anahtarı ekleyebilirsin (zorunlu değil).</span>
+    <button id="apikeyBannerClose" title="Kapat">✕</button>
+  </div>
+
   <main>
+    <div class="popular-section" id="popularSection" style="display:none;">
+      <h2><span class="rank-badge">TOP 10</span> Popüler Oyunlar</h2>
+      <div class="popular-row" id="popularRow"></div>
+    </div>
     <div class="grid" id="grid">
       <div class="empty-state">
         <h3>Yükleniyor...</h3>
@@ -318,6 +579,37 @@
       </div>
     </div>
   </main>
+
+  <!-- Oyun detay paneli -->
+  <div class="detail-overlay" id="detailOverlay">
+    <div class="detail-panel">
+      <button class="detail-close" id="detailClose">✕</button>
+      <div class="detail-hero" id="detailHero">
+        <div class="detail-hero-fallback" id="detailHeroFallback"></div>
+        <div class="detail-hero-title" id="detailTitle"></div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-actions">
+          <button class="detail-download" id="detailDownloadBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+            İndir
+          </button>
+          <div class="storage-badge" id="detailStorageBadge"></div>
+        </div>
+        <div class="detail-section">
+          <h3>Sistem Gereksinimleri</h3>
+          <div class="detail-req-loading" id="detailReqLoading"><span class="spinner"></span>Web'den bilgi alınıyor...</div>
+          <div class="detail-req-grid" id="detailReqContent">
+            <div class="req-col"><h4>Minimum</h4><pre id="reqMinText"></pre></div>
+            <div class="req-col"><h4>Önerilen</h4><pre id="reqRecText"></pre></div>
+          </div>
+          <div class="detail-no-info" id="detailNoInfo" style="display:none;">
+            Bu oyun için sistem gereksinimi bilgisi otomatik olarak bulunamadı. <a id="detailSearchLink" target="_blank">Web'de ara →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Şifre modalı -->
   <div class="overlay" id="pwOverlay">
@@ -341,17 +633,22 @@
     </div>
   </div>
 
-  <!-- Excel yükleme modalı -->
+  <!-- Ayarlar modalı: Oyun listesi + API ayarları -->
   <div class="overlay" id="uploadOverlay">
-    <div class="dialog">
+    <div class="dialog" style="width:440px;">
       <div class="dialog-header">
         <div class="gear">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        <h2>Oyun listesini güncelle</h2>
+        <h2>Ayarlar</h2>
       </div>
-      <div class="dialog-body">
-        <p class="hint">"İsim" ve "Link" sütunlarını içeren bir Excel dosyası (.xlsx) yükleyin. Yüklenen liste, mevcut listenin yerini alır.</p>
+      <div class="settings-tabs">
+        <button class="settings-tab active" id="tabListBtn" data-tab="list">Oyun Listesi</button>
+        <button class="settings-tab" id="tabApiBtn" data-tab="api">API Ayarları</button>
+      </div>
+
+      <div class="dialog-body settings-panel" id="panelList">
+        <p class="hint">"İsim" ve "Link" sütunlarını (isteğe bağlı "Öne Çıkan": Evet/Hayır ve "Sıra": 1-10) içeren bir Excel dosyası (.xlsx) yükleyin. Yüklenen liste, mevcut listenin yerini alır.</p>
         <label class="file-drop" id="fileDrop">
           <input type="file" id="fileInput" accept=".xlsx,.xls">
           <span id="fileDropText">Dosya seçmek için tıklayın</span>
@@ -359,22 +656,70 @@
         <div class="error-msg" id="uploadError"></div>
         <div class="status-msg" id="uploadStatus"></div>
       </div>
+
+      <div class="dialog-body settings-panel" id="panelApi" style="display:none;">
+        <p class="hint">Bu bilgiler yalnızca bu tarayıcıda (localStorage) saklanır. RAWG'a giriş yapamıyorsan boş bırakabilirsin; kapak/gereksinim bilgisi otomatik olarak Steam'den çekilir.</p>
+
+        <label class="field-label" for="rawgKeyInput">RAWG API Anahtarı (opsiyonel)</label>
+        <input type="text" id="rawgKeyInput" placeholder="rawg.io/apidocs adresinden alınabilir" style="margin-bottom:14px;">
+
+        <label class="field-label" for="supaUrlInput">Supabase Project URL</label>
+        <input type="text" id="supaUrlInput" placeholder="https://xxxx.supabase.co" style="margin-bottom:14px;">
+
+        <label class="field-label" for="supaKeyInput">Supabase API Anahtarı (anon/publishable)</label>
+        <input type="text" id="supaKeyInput" placeholder="sb_publishable_..." style="margin-bottom:6px;">
+
+        <div class="error-msg" id="apiSettingsError"></div>
+        <div class="status-msg" id="apiSettingsStatus"></div>
+      </div>
+
       <div class="dialog-footer">
         <button class="btn" id="uploadCancel">Kapat</button>
-        <button class="btn btn-primary" id="uploadSubmit" disabled>Kaydet</button>
+        <button class="btn btn-primary" id="uploadSubmit">Kaydet</button>
       </div>
     </div>
   </div>
 
 <script>
-  // ---------- Supabase ----------
-  const SUPABASE_URL = "https://nbimcsbehkeapohytoih.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_-28o0MUWHqwTz_3JR7wC8A_0VtUeZE-";
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const TABLE = "games";
+  // ---------- Ayarlar (localStorage'da saklanır) ----------
+  const DEFAULT_SUPABASE_URL = "https://nbimcsbehkeapohytoih.supabase.co";
+  const DEFAULT_SUPABASE_KEY = "sb_publishable_-28o0MUWHqwTz_3JR7wC8A_0VtUeZE-";
   const SETTINGS_PASSWORD = "20241816Zr";
+  const TABLE = "games";
 
-  const AVATAR_COLORS = ["#C9694A","#5B7C99","#7C9473","#B08968","#8B6BA8","#C9A15A","#5E8B7E","#A85C6B"];
+  function loadSettings(){
+    let saved = {};
+    try{ saved = JSON.parse(localStorage.getItem("oyunKutuphanem:settings") || "{}"); }catch(e){}
+    return {
+      rawgKey: saved.rawgKey || "",
+      supaUrl: saved.supaUrl || DEFAULT_SUPABASE_URL,
+      supaKey: saved.supaKey || DEFAULT_SUPABASE_KEY
+    };
+  }
+  function saveSettings(next){
+    localStorage.setItem("oyunKutuphanem:settings", JSON.stringify(next));
+  }
+
+  let APP_SETTINGS = loadSettings();
+
+  // ---------- Supabase ----------
+  let sb = supabase.createClient(APP_SETTINGS.supaUrl, APP_SETTINGS.supaKey);
+
+  // ---------- RAWG API (birincil sağlayıcı — opsiyonel) ----------
+  // Ücretsiz anahtar: https://rawg.io/apidocs (rawg.io'ya giriş/kayıt sorun çıkarırsa boş bırakılabilir,
+  // bu durumda kapak görseli ve sistem gereksinimleri otomatik olarak Steam üzerinden çekilir).
+  let RAWG_API_KEY = APP_SETTINGS.rawgKey;
+  let RAWG_READY = !!RAWG_API_KEY;
+
+  function refreshApiKeyBanner(){
+    document.getElementById("apikeyBanner").style.display = RAWG_READY ? "none" : "flex";
+  }
+  refreshApiKeyBanner();
+  document.getElementById("apikeyBannerClose").addEventListener("click", () => {
+    document.getElementById("apikeyBanner").style.display = "none";
+  });
+
+  const AVATAR_COLORS = ["#2E8CFF","#5B7C99","#7C9473","#B08968","#8B6BA8","#C9A15A","#5E8B7E","#A85C6B"];
   function colorForName(name){
     let sum = 0;
     for(const ch of name) sum += ch.charCodeAt(0);
@@ -382,13 +727,168 @@
   }
 
   let allGames = [];
+  const metaCache = {}; // isim(lowercase) -> meta object, bellek içi hızlı erişim
 
+  // ---------- Ses efektleri (Web Audio API, dış dosya gerektirmez) ----------
+  let audioCtx = null;
+  function ensureAudio(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  document.addEventListener("pointerdown", () => ensureAudio(), { once:true });
+
+  function beep({freq=440, duration=0.06, type="sine", gain=0.05, glideTo=null}){
+    const ctx = ensureAudio();
+    if(!ctx) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    if(glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, ctx.currentTime + duration);
+    g.gain.setValueAtTime(gain, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration + 0.03);
+  }
+  const playHoverSound = () => beep({freq:640, duration:0.045, gain:0.025, type:"sine"});
+  const playClickSound = () => beep({freq:320, duration:0.07, gain:0.06, type:"triangle", glideTo:660});
+  const playOpenSound  = () => beep({freq:220, duration:0.16, gain:0.05, type:"sine", glideTo:480});
+  const playCloseSound = () => beep({freq:420, duration:0.10, gain:0.04, type:"sine", glideTo:180});
+
+  // ---------- RAWG'dan oyun kapağı + sistem gereksinimi çekme ----------
+  function cacheKeyFor(name){ return "gmeta:" + name.trim().toLowerCase(); }
+
+  async function fetchGameMeta(name){
+    const key = name.trim().toLowerCase();
+    if(metaCache[key]) return metaCache[key];
+
+    const stored = localStorage.getItem(cacheKeyFor(name));
+    if(stored){
+      try{ const parsed = JSON.parse(stored); metaCache[key] = parsed; return parsed; }catch(e){}
+    }
+
+    let meta = null;
+    if(RAWG_READY){
+      meta = await fetchFromRawg(name);
+    }
+    // RAWG anahtarı yoksa ya da RAWG sonuç bulamadıysa Steam'e düş
+    if(!meta || meta.notFound){
+      const steamMeta = await fetchFromSteam(name);
+      if(steamMeta && !steamMeta.notFound) meta = steamMeta;
+      else meta = meta || steamMeta || { notFound:true };
+    }
+
+    metaCache[key] = meta;
+    try{ localStorage.setItem(cacheKeyFor(name), JSON.stringify(meta)); }catch(e){}
+    return meta;
+  }
+
+  // ---------- Sağlayıcı 1: RAWG ----------
+  async function fetchFromRawg(name){
+    const key = name.trim().toLowerCase();
+    try{
+      const searchRes = await fetch(`https://api.rawg.io/api/games?key=${RAWG_API_KEY}&search=${encodeURIComponent(name)}&page_size=5`);
+      const searchData = await searchRes.json();
+      const results = searchData.results || [];
+      if(!results.length) return { notFound:true };
+      const match = results.find(r => (r.name||"").toLowerCase() === key) || results[0];
+
+      const detailRes = await fetch(`https://api.rawg.io/api/games/${match.id}?key=${RAWG_API_KEY}`);
+      const detail = await detailRes.json();
+
+      const pcEntry = (detail.platforms || []).find(p => {
+        const slug = (p.platform && (p.platform.slug || p.platform.name) || "").toLowerCase();
+        return slug.includes("pc");
+      });
+      const reqMin = pcEntry?.requirements_en?.minimum || null;
+      const reqRec = pcEntry?.requirements_en?.recommended || null;
+      const storageSource = reqRec || reqMin || "";
+      const storageMatch = storageSource.match(/storage[^\n:]*:?\s*([\d.,]+\s?(?:GB|MB))/i);
+
+      return {
+        image: detail.background_image || match.background_image || null,
+        reqMin, reqRec,
+        storage: storageMatch ? storageMatch[1].trim() : null,
+        notFound: !reqMin && !reqRec && !detail.background_image
+      };
+    }catch(err){
+      console.error("RAWG istek hatası:", err);
+      return { notFound:true, error:true };
+    }
+  }
+
+  // ---------- Sağlayıcı 2 (yedek, anahtar gerektirmez): Steam Store ----------
+  // rawg.io'ya kayıt/giriş sorun çıkarırsa, kapak görseli ve sistem gereksinimleri
+  // otomatik olarak Steam mağaza verisinden çekilir. Tarayıcıdan doğrudan erişim CORS'a
+  // takılabildiği için istekler açık bir CORS proxy üzerinden yapılır.
+  const CORS_PROXY = "https://corsproxy.io/?url=";
+
+  function stripHtml(html){
+    if(!html) return null;
+    const d = document.createElement("div");
+    d.innerHTML = html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|li)>/gi, "\n");
+    return (d.textContent || "").replace(/\n{2,}/g, "\n").trim() || null;
+  }
+
+  async function fetchFromSteam(name){
+    try{
+      const searchUrl = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(name)}&l=english&cc=us`;
+      const searchRes = await fetch(CORS_PROXY + encodeURIComponent(searchUrl));
+      const searchData = await searchRes.json();
+      const items = searchData.items || [];
+      if(!items.length) return { notFound:true };
+
+      const key = name.trim().toLowerCase();
+      const match = items.find(i => (i.name||"").toLowerCase() === key) || items[0];
+
+      const detailUrl = `https://store.steampowered.com/api/appdetails?appids=${match.id}&l=english`;
+      const detailRes = await fetch(CORS_PROXY + encodeURIComponent(detailUrl));
+      const detailData = await detailRes.json();
+      const entry = detailData[match.id];
+      const d = entry && entry.success ? entry.data : null;
+      if(!d) return { image: match.tiny_image || null, notFound:true };
+
+      const pc = d.pc_requirements;
+      const reqMin = pc && !Array.isArray(pc) ? stripHtml(pc.minimum) : null;
+      const reqRec = pc && !Array.isArray(pc) ? stripHtml(pc.recommended) : null;
+      const storageSource = (reqRec || reqMin || "");
+      const storageMatch = storageSource.match(/storage[^\n:]*:?\s*([\d.,]+\s?(?:GB|MB))/i);
+
+      return {
+        image: d.header_image || match.tiny_image || null,
+        reqMin, reqRec,
+        storage: storageMatch ? storageMatch[1].trim() : null,
+        notFound: !reqMin && !reqRec && !d.header_image
+      };
+    }catch(err){
+      console.error("Steam istek hatası:", err);
+      return { notFound:true, error:true };
+    }
+  }
+
+  function cleanReqText(text){
+    if(!text) return "Belirtilmemiş";
+    return text.replace(/\r\n/g, "\n").trim();
+  }
+
+  // ---------- Oyun listesi ----------
   async function loadGames(){
     const grid = document.getElementById("grid");
-    const { data, error } = await sb.from(TABLE).select("isim, link").order("isim", { ascending: true });
+    let { data, error } = await sb.from(TABLE).select("isim, link, one_cikan, sira").order("isim", { ascending: true });
     if(error){
-      grid.innerHTML = `<div class="empty-state"><h3>Bağlantı hatası</h3><p>Oyunlar yüklenemedi: ${escapeHtml(error.message)}</p></div>`;
-      return;
+      // one_cikan/sira kolonları henüz eklenmemiş olabilir (bkz. SQL migration) — eski şemaya düş
+      const fallback = await sb.from(TABLE).select("isim, link").order("isim", { ascending: true });
+      if(fallback.error){
+        grid.innerHTML = `<div class="empty-state"><h3>Bağlantı hatası</h3><p>Oyunlar yüklenemedi: ${escapeHtml(fallback.error.message)}</p></div>`;
+        return;
+      }
+      data = fallback.data;
     }
     allGames = data || [];
     renderGames(allGames);
@@ -400,8 +900,44 @@
     return d.innerHTML;
   }
 
+  function renderPopular(list){
+    const section = document.getElementById("popularSection");
+    const row = document.getElementById("popularRow");
+    const popular = list
+      .filter(g => g.one_cikan)
+      .sort((a,b) => (a.sira ?? 999) - (b.sira ?? 999))
+      .slice(0, 10);
+
+    if(!popular.length){
+      section.style.display = "none";
+      row.innerHTML = "";
+      return;
+    }
+    section.style.display = "block";
+    row.innerHTML = popular.map((g, i) => {
+      const cached = metaCache[(g.isim||"").trim().toLowerCase()];
+      const hasImage = cached && cached.image;
+      const color = colorForName(g.isim || "");
+      return `
+        <div class="popular-card" data-name="${escapeHtml(g.isim)}" data-link="${escapeHtml(g.link)}">
+          <div class="rank-num">${i+1}</div>
+          <div class="cover-img ${hasImage ? "loaded" : ""}" style="${hasImage ? `background-image:url('${cached.image}')` : `background:${color}`}"></div>
+          ${hasImage ? "" : `<div class="cover-fallback">${escapeHtml(g.isim)}</div>`}
+          <div class="game-name">${escapeHtml(g.isim)}</div>
+        </div>`;
+    }).join("");
+
+    row.querySelectorAll(".popular-card").forEach(card => {
+      const name = card.getAttribute("data-name");
+      const link = card.getAttribute("data-link");
+      card.addEventListener("mouseenter", () => playHoverSound());
+      card.addEventListener("click", () => openGameDetail(name, link, card));
+    });
+  }
+
   function renderGames(list){
     const grid = document.getElementById("grid");
+    renderPopular(list);
     if(!list.length){
       grid.innerHTML = `<div class="empty-state"><h3>Henüz oyun eklenmedi</h3><p>Sağ üstteki ayarlar simgesinden Excel dosyanızı yükleyin.</p></div>`;
       return;
@@ -409,20 +945,68 @@
     grid.innerHTML = list.map(g => {
       const letter = (g.isim || "?").trim().charAt(0).toUpperCase();
       const color = colorForName(g.isim || "");
+      const cached = metaCache[(g.isim||"").trim().toLowerCase()];
+      const hasImage = cached && cached.image;
       return `
-        <div class="card">
-          <div class="avatar" style="background:${color}">${escapeHtml(letter)}</div>
-          <div class="game-name">${escapeHtml(g.isim)}</div>
-          <button class="dl-btn" data-link="${escapeHtml(g.link)}">İndir</button>
+        <div class="card" data-name="${escapeHtml(g.isim)}" data-link="${escapeHtml(g.link)}">
+          <div class="cover-img ${hasImage ? "loaded" : ""}" style="${hasImage ? `background-image:url('${cached.image}')` : `background:${color}`}"></div>
+          ${hasImage ? "" : `<div class="cover-fallback">${escapeHtml(g.isim)}</div>`}
+          <div class="card-shade"></div>
+          <div class="play-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg>
+          </div>
+          <div class="card-info">
+            <div class="game-name">${escapeHtml(g.isim)}</div>
+            <button class="quick-dl" data-link="${escapeHtml(g.link)}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+              İndir
+            </button>
+          </div>
         </div>`;
     }).join("");
 
-    grid.querySelectorAll(".dl-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
+    grid.querySelectorAll(".card").forEach(card => {
+      const name = card.getAttribute("data-name");
+      const link = card.getAttribute("data-link");
+      card.addEventListener("mouseenter", () => playHoverSound());
+      card.addEventListener("click", (e) => {
+        if(e.target.closest(".quick-dl")) return;
+        openGameDetail(name, link, card);
+      });
+    });
+    grid.querySelectorAll(".quick-dl").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        playClickSound();
         const link = btn.getAttribute("data-link");
         if(link) window.open(link, "_blank");
       });
     });
+
+    hydrateGameImages(list);
+  }
+
+  async function hydrateGameImages(list){
+    for(const g of list){
+      const key = (g.isim || "").trim().toLowerCase();
+      if(metaCache[key] && metaCache[key].image) continue; // zaten yüklü
+      const meta = await fetchGameMeta(g.isim);
+      if(meta && meta.image){
+        const cards = document.querySelectorAll(`.card[data-name="${cssEscape(g.isim)}"], .popular-card[data-name="${cssEscape(g.isim)}"]`);
+        cards.forEach(card => {
+          const img = card.querySelector(".cover-img");
+          const fallback = card.querySelector(".cover-fallback");
+          img.style.backgroundImage = `url('${meta.image}')`;
+          img.classList.add("loaded");
+          if(fallback) fallback.remove();
+        });
+      }
+      if(RAWG_READY) await new Promise(r => setTimeout(r, 150)); // API'yi yormamak için
+    }
+  }
+
+  function cssEscape(str){
+    return (window.CSS && CSS.escape) ? CSS.escape(str) : str.replace(/["\\]/g, "\\$&");
   }
 
   // ---------- Arama ----------
@@ -432,12 +1016,89 @@
     renderGames(filtered);
   });
 
+  // ---------- Oyun detay paneli ----------
+  const detailOverlay = document.getElementById("detailOverlay");
+  const detailHero = document.getElementById("detailHero");
+  const detailHeroFallback = document.getElementById("detailHeroFallback");
+  const detailTitle = document.getElementById("detailTitle");
+  const detailDownloadBtn = document.getElementById("detailDownloadBtn");
+  const detailReqLoading = document.getElementById("detailReqLoading");
+  const detailReqContent = document.getElementById("detailReqContent");
+  const reqMinText = document.getElementById("reqMinText");
+  const reqRecText = document.getElementById("reqRecText");
+  const detailStorageBadge = document.getElementById("detailStorageBadge");
+  const detailNoInfo = document.getElementById("detailNoInfo");
+  const detailSearchLink = document.getElementById("detailSearchLink");
+
+  async function openGameDetail(name, link, cardEl){
+    playOpenSound();
+    detailTitle.textContent = name;
+    detailDownloadBtn.onclick = () => { playClickSound(); if(link) window.open(link, "_blank"); };
+    detailSearchLink.href = "https://www.google.com/search?q=" + encodeURIComponent(name + " system requirements PC");
+
+    // Kapak görseli: kartta zaten varsa onu kullan, yoksa renkli baş harf göster
+    const key = name.trim().toLowerCase();
+    const cached = metaCache[key];
+    if(cached && cached.image){
+      detailHero.style.backgroundImage = `url('${cached.image}')`;
+      detailHeroFallback.style.display = "none";
+    } else {
+      detailHero.style.backgroundImage = "none";
+      detailHero.style.background = colorForName(name);
+      detailHeroFallback.style.display = "flex";
+      detailHeroFallback.textContent = name.trim().charAt(0).toUpperCase();
+    }
+
+    detailReqLoading.style.display = "flex";
+    detailReqContent.style.display = "none";
+    detailNoInfo.style.display = "none";
+    detailStorageBadge.style.display = "none";
+
+    detailOverlay.classList.add("show");
+
+    const meta = await fetchGameMeta(name);
+
+    if(meta && meta.image && !(cached && cached.image)){
+      detailHero.style.backgroundImage = `url('${meta.image}')`;
+      detailHeroFallback.style.display = "none";
+    }
+
+    detailReqLoading.style.display = "none";
+
+    if(meta && (meta.reqMin || meta.reqRec)){
+      detailReqContent.style.display = "grid";
+      reqMinText.textContent = cleanReqText(meta.reqMin);
+      reqRecText.textContent = cleanReqText(meta.reqRec);
+      if(meta.storage){
+        detailStorageBadge.style.display = "inline-flex";
+        detailStorageBadge.textContent = "💾 " + meta.storage;
+      }
+    } else {
+      detailNoInfo.style.display = "block";
+    }
+  }
+
+  document.getElementById("detailClose").addEventListener("click", () => {
+    playCloseSound();
+    detailOverlay.classList.remove("show");
+  });
+  detailOverlay.addEventListener("click", (e) => {
+    if(e.target === detailOverlay){ playCloseSound(); detailOverlay.classList.remove("show"); }
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && detailOverlay.classList.contains("show")){
+      playCloseSound();
+      detailOverlay.classList.remove("show");
+    }
+  });
+
   // ---------- Şifre modalı ----------
   const pwOverlay = document.getElementById("pwOverlay");
   const pwInput = document.getElementById("pwInput");
   const pwError = document.getElementById("pwError");
 
   document.getElementById("settingsBtn").addEventListener("click", () => {
+    playClickSound();
     pwInput.value = "";
     pwError.classList.remove("show");
     pwOverlay.classList.add("show");
@@ -448,16 +1109,19 @@
 
   function checkPassword(){
     if(pwInput.value === SETTINGS_PASSWORD){
+      playClickSound();
       pwOverlay.classList.remove("show");
       openUploadModal();
     } else {
+      playErrorSound();
       pwError.classList.add("show");
     }
   }
+  function playErrorSound(){ beep({freq:180, duration:0.14, gain:0.05, type:"sawtooth", glideTo:90}); }
   document.getElementById("pwSubmit").addEventListener("click", checkPassword);
   pwInput.addEventListener("keydown", (e) => { if(e.key === "Enter") checkPassword(); });
 
-  // ---------- Excel yükleme modalı ----------
+  // ---------- Ayarlar modalı (Oyun Listesi + API Ayarları sekmeleri) ----------
   const uploadOverlay = document.getElementById("uploadOverlay");
   const fileInput = document.getElementById("fileInput");
   const fileDropText = document.getElementById("fileDropText");
@@ -466,7 +1130,30 @@
   const uploadError = document.getElementById("uploadError");
   const uploadStatus = document.getElementById("uploadStatus");
 
+  const tabListBtn = document.getElementById("tabListBtn");
+  const tabApiBtn = document.getElementById("tabApiBtn");
+  const panelList = document.getElementById("panelList");
+  const panelApi = document.getElementById("panelApi");
+  const rawgKeyInput = document.getElementById("rawgKeyInput");
+  const supaUrlInput = document.getElementById("supaUrlInput");
+  const supaKeyInput = document.getElementById("supaKeyInput");
+  const apiSettingsError = document.getElementById("apiSettingsError");
+  const apiSettingsStatus = document.getElementById("apiSettingsStatus");
+
+  let activeTab = "list";
   let parsedRows = null;
+
+  function setActiveTab(tab){
+    activeTab = tab;
+    tabListBtn.classList.toggle("active", tab === "list");
+    tabApiBtn.classList.toggle("active", tab === "api");
+    panelList.style.display = tab === "list" ? "block" : "none";
+    panelApi.style.display = tab === "api" ? "block" : "none";
+    uploadSubmit.textContent = tab === "list" ? "Kaydet" : "Ayarları Kaydet";
+    uploadSubmit.disabled = tab === "list" ? !(parsedRows && parsedRows.length) : false;
+  }
+  tabListBtn.addEventListener("click", () => { playClickSound(); setActiveTab("list"); });
+  tabApiBtn.addEventListener("click", () => { playClickSound(); setActiveTab("api"); });
 
   function openUploadModal(){
     fileInput.value = "";
@@ -474,8 +1161,16 @@
     fileDrop.classList.remove("has-file");
     uploadError.classList.remove("show");
     uploadStatus.classList.remove("show");
-    uploadSubmit.disabled = true;
+    apiSettingsError.classList.remove("show");
+    apiSettingsStatus.classList.remove("show");
     parsedRows = null;
+
+    const s = loadSettings();
+    rawgKeyInput.value = s.rawgKey;
+    supaUrlInput.value = s.supaUrl;
+    supaKeyInput.value = s.supaKey;
+
+    setActiveTab("list");
     uploadOverlay.classList.add("show");
   }
   document.getElementById("uploadCancel").addEventListener("click", () => uploadOverlay.classList.remove("show"));
@@ -498,7 +1193,11 @@
         const cleaned = rows.map(r => {
           const isim = (r["İsim"] ?? r["Isim"] ?? r["isim"] ?? "").toString().trim();
           const link = (r["Link"] ?? r["link"] ?? "").toString().trim();
-          return { isim, link };
+          const oneCikanRaw = (r["Öne Çıkan"] ?? r["Öne Cikan"] ?? r["one_cikan"] ?? "").toString().trim().toLowerCase();
+          const one_cikan = ["evet","yes","true","1","x"].includes(oneCikanRaw);
+          const siraRaw = r["Sıra"] ?? r["Sira"] ?? r["sira"];
+          const sira = siraRaw !== undefined && siraRaw !== "" && !isNaN(Number(siraRaw)) ? Number(siraRaw) : null;
+          return { isim, link, one_cikan, sira };
         }).filter(r => r.isim && r.link);
 
         if(!cleaned.length){
@@ -510,7 +1209,8 @@
         }
 
         parsedRows = cleaned;
-        fileDropText.textContent = `${file.name} — ${cleaned.length} oyun bulundu`;
+        const popCount = cleaned.filter(r => r.one_cikan).length;
+        fileDropText.textContent = `${file.name} — ${cleaned.length} oyun bulundu${popCount ? `, ${popCount} tanesi öne çıkan` : ""}`;
         fileDrop.classList.add("has-file");
         uploadSubmit.disabled = false;
       }catch(err){
@@ -523,6 +1223,11 @@
   });
 
   uploadSubmit.addEventListener("click", async () => {
+    if(activeTab === "api"){
+      saveApiSettings();
+      return;
+    }
+
     if(!parsedRows || !parsedRows.length) return;
     uploadError.classList.remove("show");
     uploadStatus.classList.remove("show");
@@ -533,7 +1238,14 @@
       const { error: delError } = await sb.from(TABLE).delete().neq("isim", "__none__");
       if(delError) throw delError;
 
-      const { error: insError } = await sb.from(TABLE).insert(parsedRows);
+      let rowsToInsert = parsedRows;
+      let { error: insError } = await sb.from(TABLE).insert(rowsToInsert);
+      if(insError && /one_cikan|sira|column/i.test(insError.message || "")){
+        // Tablo henüz one_cikan/sira kolonlarına sahip değil (bkz. SQL migration) — eski şemayla dene
+        rowsToInsert = parsedRows.map(({isim, link}) => ({isim, link}));
+        const retry = await sb.from(TABLE).insert(rowsToInsert);
+        insError = retry.error;
+      }
       if(insError) throw insError;
 
       uploadStatus.textContent = `${parsedRows.length} oyun kaydedildi.`;
@@ -548,6 +1260,32 @@
       uploadSubmit.textContent = "Kaydet";
     }
   });
+
+  function saveApiSettings(){
+    apiSettingsError.classList.remove("show");
+    apiSettingsStatus.classList.remove("show");
+
+    const supaUrl = supaUrlInput.value.trim() || DEFAULT_SUPABASE_URL;
+    const supaKey = supaKeyInput.value.trim() || DEFAULT_SUPABASE_KEY;
+
+    if(!/^https:\/\/.+\.supabase\.co\/?$/.test(supaUrl)){
+      apiSettingsError.textContent = "Supabase URL geçersiz görünüyor (https://xxxx.supabase.co biçiminde olmalı).";
+      apiSettingsError.classList.add("show");
+      return;
+    }
+
+    const next = { rawgKey: rawgKeyInput.value.trim(), supaUrl, supaKey };
+    saveSettings(next);
+    APP_SETTINGS = next;
+    RAWG_API_KEY = next.rawgKey;
+    RAWG_READY = !!RAWG_API_KEY;
+    refreshApiKeyBanner();
+    sb = supabase.createClient(next.supaUrl, next.supaKey);
+
+    apiSettingsStatus.textContent = "Ayarlar kaydedildi.";
+    apiSettingsStatus.classList.add("show");
+    loadGames();
+  }
 
   // ---------- Başlangıç ----------
   loadGames();
